@@ -1,0 +1,139 @@
+type Course {
+  id: ID!
+  wallet: String!
+  title: String!
+  description: String
+  imageUrl: String
+  price: Float
+  isPublished: Boolean
+  categoryId: String
+  category: Category
+  attachments: [Attachment!]!
+  chapters: [Chapter!]!
+  enrollments: [Enrollment!]!
+  createdAt: String
+  updatedAt: String
+}
+
+type Chapter {
+  id: ID!
+  title: String!
+  description: String
+  videoUrl: String
+  position: Int!
+  isPublished: Boolean
+  isFree: Boolean
+  muxData: MuxData
+  courseId: String!
+  userProgress: [UserProgress!]!
+  createdAt: String
+  updatedAt: String
+}
+
+type MuxData {
+  id: ID!
+  assetId: String!
+  playbackId: String
+  chapterId: String!
+}
+
+type Attachment {
+  id: ID!
+  name: String!
+  url: String!
+  courseId: String!
+  createdAt: String
+  updatedAt: String
+}
+
+type Enrollment {
+  id: ID!
+  wallet: String!
+  courseId: String!
+  enrolledVia: String
+  txHash: String
+  createdAt: String
+  updatedAt: String
+}
+
+type UserProgress {
+  id: ID!
+  wallet: String!
+  chapterId: String!
+  isCompleted: Boolean
+  createdAt: String
+  updatedAt: String
+}
+
+type Category {
+  id: ID!
+  name: String!
+  courses: [Course!]!
+}
+
+type User {
+  wallet: String!
+  name: String
+  email: String
+  role: String
+  lensHandle: String
+  lensProfileId: String
+  createdAt: String
+}
+
+type Query {
+  courses: [Course!]!
+  course(id: ID!): Course
+  courseById(id: ID!): Course
+  categories: [Category!]!
+  chapterById(id: ID!): Chapter
+}
+
+input CourseInput {
+  title: String
+  description: String
+  imageUrl: String
+  price: Float
+  isPublished: Boolean
+  categoryId: String
+}
+
+input ReorderInput {
+  id: String!
+  position: Int!
+}
+
+input ChapterInput {
+  title: String
+  description: String
+  videoUrl: String
+  isFree: Boolean
+  isPublished: Boolean
+}
+
+type Mutation {
+  seedCategories: [Category!]!
+  registerUser(
+    wallet: String!
+    name: String
+    email: String
+    role: String
+    lensHandle: String
+    lensProfileId: String
+  ): User!
+  deleteUser(wallet: String!): User!
+  createCourse(wallet: String!, title: String!): Course!
+  updateCourse(wallet: String!, courseId: String!, data: CourseInput!): Course
+  deleteCourse(wallet: String!, courseId: String!): Course
+  createChapter(wallet: String!, courseId: String!, title: String!): Chapter!
+  reorderChapters(
+    wallet: String!
+    courseId: String!
+    list: [ReorderInput!]!
+  ): [Chapter!]!
+  addCourseAttachment(courseId: String!, url: String!): Attachment!
+  updateChapter(chapterId: String!, data: ChapterInput!): Chapter
+  publishChapter(chapterId: String!): Chapter
+  unpublishChapter(chapterId: String!): Chapter
+  deleteChapter(chapterId: String!): Chapter
+}
