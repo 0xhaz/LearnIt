@@ -11,6 +11,8 @@ export const GET_COURSE_WITH_ID = gql`
       isPublished
       wallet
       categoryId
+      createdAt
+      updatedAt
       attachments {
         id
         url
@@ -22,6 +24,8 @@ export const GET_COURSE_WITH_ID = gql`
         isFree
         isPublished
         position
+        createdAt
+        updatedAt
         muxData {
           playbackId
         }

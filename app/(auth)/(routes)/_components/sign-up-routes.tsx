@@ -140,7 +140,7 @@ export const SignUpRoutes = () => {
           <Image
             className="object-cover "
             fill={true}
-            src="/logo.png"
+            src="/public/logo.png"
             alt="bg-image"
           />
         </div>

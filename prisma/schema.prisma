@@ -22,7 +22,8 @@ model Course {
 
   chapters Chapter[]
   attachments Attachment[]
-  enrollments Enrollment[]     
+  enrollments Enrollment[]
+  purchases Purchase[]     
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
@@ -50,6 +51,21 @@ model Attachment {
 
   @@index([courseId])
 }
+
+model Purchase {
+  id        String   @id @default(uuid()) @map("_id")
+  wallet    String                    
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+  @@unique([wallet, courseId]) 
+}
+
+
 
 model Chapter {
   id String @id @default(uuid()) @map("_id")

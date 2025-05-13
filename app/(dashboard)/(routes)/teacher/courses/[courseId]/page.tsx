@@ -22,37 +22,7 @@ import { CategoryForm } from "./_components/category-form";
 import { ChaptersForm } from "./_components/chapters-form";
 import { PriceForm } from "./_components/price-form";
 import { AttachmentForm } from "./_components/attachment-form";
-
-type GetCourseWithIdResponse = {
-  courseById: {
-    id: string;
-    title: string;
-    description?: string;
-    imageUrl?: string;
-    price?: number;
-    isPublished: boolean;
-    wallet: string;
-    categoryId?: string;
-    attachments: {
-      id: string;
-      url: string;
-      name: string;
-    }[];
-    chapters: {
-      id: string;
-      title: string;
-      isPublished: boolean;
-      position: number;
-    }[];
-  };
-};
-
-type GetCategoriesResponse = {
-  categories: {
-    id: string;
-    name: string;
-  }[];
-};
+import { GetCourseWithIdResponse, GetCategoriesResponse } from "@/types";
 
 const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
   const wallet = await getWalletAddress();
@@ -116,8 +86,14 @@ const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
               <h2 className="text-xl">Customize your course</h2>
             </div>
             <TitleForm initialData={course} courseId={course.id} />
-            <DescriptionForm initialData={course} courseId={course.id} />
-            <ImageForm initialData={course} courseId={course.id} />
+            <DescriptionForm
+              initialData={{ description: course.description ?? null }}
+              courseId={course.id}
+            />
+            <ImageForm
+              initialData={{ imageUrl: course.imageUrl ?? null }}
+              courseId={course.id}
+            />
             <CategoryForm
               initialData={course}
               courseId={course.id}

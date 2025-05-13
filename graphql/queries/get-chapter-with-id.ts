@@ -13,6 +13,10 @@ export const GET_CHAPTER_WITH_ID = gql`
       position
       createdAt
       updatedAt
+      course {
+        id
+        title
+      }
       muxData {
         id
         assetId

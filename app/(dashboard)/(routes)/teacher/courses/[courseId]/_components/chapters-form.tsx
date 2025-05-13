@@ -18,15 +18,17 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Chapter, Course } from "@prisma/client";
 import { Input } from "@/components/ui/input";
 import { ChaptersList } from "./chapters-list";
+import { GetCourseWithIdResponse } from "@/types";
 import { CREATE_COURSE_CHAPTER } from "@/graphql/mutations/create-course-chapter";
 import { REORDER_COURSE_CHAPTERS } from "@/graphql/mutations/reorder-course-chapter";
 import { getClient } from "@/lib/graphql-client";
 
+type Course = GetCourseWithIdResponse["courseById"];
+
 interface ChaptersFormProps {
-  initialData: Course & { chapters: Chapter[] };
+  initialData: Course;
   courseId: string;
 }
 

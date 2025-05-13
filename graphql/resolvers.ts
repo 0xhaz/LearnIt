@@ -16,17 +16,44 @@ interface ChapterInput {
 
 export const resolvers = {
   Query: {
-    courses: async (_parent: any, _args: any, ctx: Context) => {
+    courses: async (
+      _parent: any,
+      args: { title?: string; categoryId?: string; isPublished?: boolean },
+      ctx: Context
+    ) => {
       return ctx.prisma.course.findMany({
-        include: { chapters: true },
+        where: {
+          ...(args.title && {
+            title: {
+              contains: args.title,
+              mode: "insensitive",
+            },
+          }),
+          ...(args.categoryId && { categoryId: args.categoryId }),
+          ...(args.isPublished !== undefined && {
+            isPublished: args.isPublished,
+          }),
+        },
+        include: {
+          category: true,
+          chapters: {
+            where: { isPublished: true },
+            select: { id: true },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
       });
     },
+
     course: async (_parent: any, _args: { id: string }, ctx: Context) => {
       return ctx.prisma.course.findUnique({
         where: { id: _args.id },
         include: { chapters: true },
       });
     },
+
     courseById: async (_: any, args: { id: string }, ctx: Context) => {
       return ctx.prisma.course.findUnique({
         where: { id: args.id },
@@ -38,6 +65,7 @@ export const resolvers = {
         },
       });
     },
+
     categories: async (_: any, _args: any, ctx: Context) => {
       try {
         const categories = await ctx.prisma.category.findMany({
@@ -55,6 +83,54 @@ export const resolvers = {
       return ctx.prisma.chapter.findUnique({
         where: { id: args.id },
         include: { muxData: true },
+      });
+    },
+
+    coursesByWallet: async (_: any, args: { wallet: string }, ctx: Context) => {
+      return ctx.prisma.course.findMany({
+        where: { wallet: args.wallet.toLowerCase() },
+        orderBy: { createdAt: "desc" },
+      });
+    },
+
+    userProgressCount: async (
+      _: any,
+      args: { userId: string; chapterIds: string[] },
+      ctx: Context
+    ) => {
+      return ctx.prisma.userProgress.count({
+        where: {
+          wallet: args.userId,
+          chapterId: { in: args.chapterIds },
+          isCompleted: true,
+        },
+      });
+    },
+  },
+
+  Course: {
+    purchases: async (parent: any, _args: any, ctx: Context) => {
+      return ctx.prisma.purchase.findMany({
+        where: {
+          courseId: parent.id,
+        },
+      });
+    },
+  },
+
+  Chapter: {
+    userProgress: async (
+      parent: any,
+      args: { wallet?: string },
+      ctx: Context
+    ) => {
+      const where = {
+        chapterId: parent.id,
+        ...(args.wallet && { wallet: args.wallet }),
+      };
+
+      return ctx.prisma.userProgress.findMany({
+        where,
       });
     },
   },
@@ -248,7 +324,7 @@ export const resolvers = {
         }
 
         const asset = await mux.video.assets.create({
-          input: data.videoUrl,
+          inputs: [{ url: data.videoUrl }],
           playback_policy: ["public"],
           test: false,
         });

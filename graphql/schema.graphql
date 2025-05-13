@@ -25,9 +25,14 @@ type Chapter {
   isFree: Boolean
   muxData: MuxData
   courseId: String!
+  course: Course
   userProgress: [UserProgress!]!
   createdAt: String
   updatedAt: String
+}
+
+extend type Chapter {
+  userProgress(wallet: String): [UserProgress!]!
 }
 
 type MuxData {
@@ -82,16 +87,31 @@ type User {
 }
 
 type Query {
-  courses: [Course!]!
+  courses(title: String, categoryId: String, isPublished: Boolean): [Course!]!
   course(id: ID!): Course
   courseById(id: ID!): Course
   categories: [Category!]!
   chapterById(id: ID!): Chapter
+  coursesByWallet(wallet: String!): [Course!]!
+  userProgressCount(userId: String!, chapterIds: [String!]!): Int!
+}
+
+type Purchase {
+  id: ID!
+  wallet: String!
+  courseId: String!
+  course: Course!
+  createdAt: String
+  updatedAt: String
+}
+
+extend type Course {
+  purchases: [Purchase!]!
 }
 
 input CourseInput {
   title: String
-  description: String
+  description: String!
   imageUrl: String
   price: Float
   isPublished: Boolean
@@ -136,4 +156,5 @@ type Mutation {
   publishChapter(chapterId: String!): Chapter
   unpublishChapter(chapterId: String!): Chapter
   deleteChapter(chapterId: String!): Chapter
+  updateProgress(chapterId: String!, isCompleted: Boolean!): UserProgress!
 }
