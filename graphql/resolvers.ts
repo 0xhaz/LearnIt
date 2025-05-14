@@ -79,6 +79,72 @@ export const resolvers = {
       }
     },
 
+    getChapter: async (
+      _: any,
+      args: { userId: string; courseId: string; chapterId: string },
+      ctx: Context
+    ) => {
+      const { userId, courseId, chapterId } = args;
+
+      const [purchase, course, chapter] = await Promise.all([
+        ctx.prisma.purchase.findUnique({
+          where: {
+            wallet_courseId: {
+              wallet: userId,
+              courseId,
+            },
+          },
+        }),
+        ctx.prisma.course.findUnique({
+          where: { id: courseId },
+          select: { price: true },
+        }),
+        ctx.prisma.chapter.findUnique({
+          where: { id: chapterId, isPublished: true },
+        }),
+      ]);
+
+      if (!chapter || !course) throw new Error("Chapter or Course not found");
+
+      const [muxData, attachments, nextChapter, userProgress] =
+        await Promise.all([
+          chapter.isFree || purchase
+            ? ctx.prisma.muxData.findUnique({ where: { chapterId } })
+            : null,
+          purchase
+            ? ctx.prisma.attachment.findMany({ where: { courseId } })
+            : [],
+          chapter.isFree || purchase
+            ? ctx.prisma.chapter.findFirst({
+                where: {
+                  courseId,
+                  isPublished: true,
+                  position: { gt: chapter.position },
+                },
+                orderBy: { position: "asc" },
+              })
+            : null,
+          ctx.prisma.userProgress.findUnique({
+            where: {
+              wallet_chapterId: {
+                wallet: userId,
+                chapterId,
+              },
+            },
+          }),
+        ]);
+
+      return {
+        chapter,
+        course,
+        muxData,
+        attachments,
+        nextChapter,
+        userProgress,
+        purchase,
+      };
+    },
+
     chapterById: async (_: any, args: { id: string }, ctx: Context) => {
       return ctx.prisma.chapter.findUnique({
         where: { id: args.id },
@@ -106,13 +172,51 @@ export const resolvers = {
         },
       });
     },
+
+    purchases: async (
+      _: any,
+      args: { where?: { wallet?: string } },
+      ctx: Context
+    ) => {
+      return ctx.prisma.purchase.findMany({
+        where: {
+          ...(args.where?.wallet && { wallet: args.where.wallet }),
+        },
+        include: {
+          course: {
+            include: {
+              category: true,
+              chapters: {
+                where: { isPublished: true },
+              },
+            },
+          },
+        },
+      });
+    },
   },
 
   Course: {
-    purchases: async (parent: any, _args: any, ctx: Context) => {
+    chapters: async (
+      parent: any,
+      args: { orderBy?: { position?: "asc" | "desc" } },
+      ctx: Context
+    ) => {
+      return ctx.prisma.chapter.findMany({
+        where: { courseId: parent.id },
+        orderBy: args.orderBy ?? { position: "asc" },
+      });
+    },
+
+    purchases: async (
+      parent: any,
+      args: { where?: { wallet?: string } },
+      ctx: Context
+    ) => {
       return ctx.prisma.purchase.findMany({
         where: {
           courseId: parent.id,
+          ...(args.where?.wallet && { wallet: args.where.wallet }),
         },
       });
     },
@@ -395,6 +499,21 @@ export const resolvers = {
           url,
           name,
         },
+      });
+    },
+
+    deleteCourseAttachment: async (
+      _: any,
+      args: { courseId: string; attachmentId: string },
+      ctx: Context
+    ) => {
+      const course = await ctx.prisma.course.findUnique({
+        where: { id: args.courseId },
+      });
+      if (!course) throw new Error("Course not found");
+
+      return ctx.prisma.attachment.delete({
+        where: { id: args.attachmentId },
       });
     },
 

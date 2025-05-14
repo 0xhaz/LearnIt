@@ -1,5 +1,3 @@
-"use client";
-
 import { getWalletAddress } from "@/lib/get-wallet-server";
 import { redirect } from "next/navigation";
 import { getClient } from "@/lib/graphql-client";

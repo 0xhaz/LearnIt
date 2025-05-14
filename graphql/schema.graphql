@@ -15,6 +15,11 @@ type Course {
   updatedAt: String
 }
 
+extend type Course {
+  chapters(orderBy: ChapterOrderByInput): [Chapter!]!
+  purchases(where: PurchaseFilterInput): [Purchase!]!
+}
+
 type Chapter {
   id: ID!
   title: String!
@@ -29,6 +34,19 @@ type Chapter {
   userProgress: [UserProgress!]!
   createdAt: String
   updatedAt: String
+}
+
+input ChapterOrderByInput {
+  position: SortOrder
+}
+
+input PurchaseFilterInput {
+  wallet: String
+}
+
+enum SortOrder {
+  asc
+  desc
 }
 
 extend type Chapter {
@@ -96,6 +114,29 @@ type Query {
   userProgressCount(userId: String!, chapterIds: [String!]!): Int!
 }
 
+extend type Query {
+  getChapter(
+    userId: String!
+    courseId: String!
+    chapterId: String!
+  ): ChapterResponse!
+  purchases(where: PurchaseFilterInput): [Purchase!]!
+}
+
+type ChapterResponse {
+  chapter: Chapter
+  course: CourseBasic
+  muxData: MuxData
+  attachments: [Attachment!]!
+  nextChapter: Chapter
+  userProgress: UserProgress
+  purchase: Purchase
+}
+
+type CourseBasic {
+  price: Float
+}
+
 type Purchase {
   id: ID!
   wallet: String!
@@ -111,7 +152,7 @@ extend type Course {
 
 input CourseInput {
   title: String
-  description: String!
+  description: String
   imageUrl: String
   price: Float
   isPublished: Boolean
@@ -152,6 +193,7 @@ type Mutation {
     list: [ReorderInput!]!
   ): [Chapter!]!
   addCourseAttachment(courseId: String!, url: String!): Attachment!
+  deleteCourseAttachment(courseId: String!, attachmentId: String!): Attachment
   updateChapter(chapterId: String!, data: ChapterInput!): Chapter
   publishChapter(chapterId: String!): Chapter
   unpublishChapter(chapterId: String!): Chapter

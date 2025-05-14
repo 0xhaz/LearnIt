@@ -8,7 +8,9 @@ import { useEffect, useState } from "react";
 import { setCookie } from "cookies-next";
 import { ConnectKitButton } from "connectkit";
 import { useRouter } from "next/navigation";
+import { inAppWallet, createWallet } from "thirdweb/wallets";
 
+import { thirdwebClient } from "@/lib/thirdweb-client";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "./search-input";
 import { ToggleMode } from "./toggle-mode";

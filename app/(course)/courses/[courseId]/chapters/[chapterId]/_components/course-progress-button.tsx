@@ -1,13 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { useConfettiStore } from "@/hooks/use-confetti-store";
-import { useMutation } from "@apollo/client";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { CheckCircle, XCircle } from "lucide-react";
-import { UPDATE_USER_PROGRESS } from "@/graphql/mutations/update-user-progress";
+
+import { Button } from "@/components/ui/button";
+import { useConfettiStore } from "@/hooks/use-confetti-store";
+import { updateProgress } from "@/graphql/mutations/update-progress";
 
 interface CourseProgressButtonProps {
   chapterId: string;
@@ -26,17 +26,13 @@ export const CourseProgressButton = ({
   const confetti = useConfettiStore();
   const [isLoading, setIsLoading] = useState(false);
 
-  const [updateProgress] = useMutation(UPDATE_USER_PROGRESS);
-
   const onClick = async () => {
     try {
       setIsLoading(true);
 
       await updateProgress({
-        variables: {
-          chapterId,
-          isCompleted: !isCompleted,
-        },
+        chapterId,
+        isCompleted: !isCompleted,
       });
 
       if (!isCompleted && !nextChapterId) {

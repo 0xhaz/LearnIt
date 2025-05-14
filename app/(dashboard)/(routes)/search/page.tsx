@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getWalletAddress } from "@/lib/get-wallet-server";
 import { getClient } from "@/lib/graphql-client";
-import { getCourses } from "@/actions/get-courses";
+import { getCourses } from "@/graphql/queries/get-courses-actions";
 import { GET_CATEGORIES } from "@/graphql/queries/get-categories";
 import { SearchInput } from "@/components/search-input";
 import { CoursesList } from "@/components/courses-list";

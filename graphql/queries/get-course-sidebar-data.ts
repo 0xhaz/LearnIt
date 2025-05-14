@@ -1,7 +1,7 @@
 import { gql } from "graphql-request";
 
 export const GET_COURSE_SIDEBAR_DATA = gql`
-  query GetCourseSidebarData($wallet: String!, $courseId: String!) {
+  query GetCourseSidebarData($wallet: String!, $courseId: ID!) {
     course(id: $courseId) {
       id
       title

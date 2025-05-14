@@ -1,7 +1,7 @@
 "use client";
 
 import { CourseCard } from "@/components/course-card";
-import { CourseWithProgressAndCategory } from "@/types"; // updated import
+import { CourseWithProgressAndCategory } from "@/types";
 
 interface CoursesListProps {
   items: CourseWithProgressAndCategory[];

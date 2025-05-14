@@ -26,6 +26,7 @@ import { UPDATE_COURSE_PRICE } from "@/graphql/mutations/update-course-price";
 interface PriceFormProps {
   initialData: {
     price: number | null;
+    description: string;
   };
   courseId: string;
 }
@@ -60,7 +61,10 @@ export const PriceForm = ({ initialData, courseId }: PriceFormProps) => {
       await client.request(UPDATE_COURSE_PRICE, {
         wallet: address,
         courseId,
-        data: { price: values.price },
+        data: {
+          price: values.price,
+          description: initialData.description,
+        },
       });
 
       toast.success("Course price updated!");

@@ -1,4 +1,4 @@
-import { getProgress } from "@/actions/get-progress";
+import { getProgress } from "@/graphql/queries/get-progress";
 import { getClient } from "@/lib/graphql-client";
 import { GET_COURSES } from "@/graphql/queries/get-courses";
 

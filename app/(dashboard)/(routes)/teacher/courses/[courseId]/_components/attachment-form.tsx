@@ -42,10 +42,11 @@ export const AttachmentForm = ({
     try {
       setDeletingId(id);
       const client = getClient();
-      await client.request(DELETE_COURSE_ATTACHMENT, {
+      const response = await client.request(DELETE_COURSE_ATTACHMENT, {
         courseId,
         attachmentId: id,
       });
+      console.log(response);
       toast.success("Attachment removed");
       router.refresh();
     } catch {

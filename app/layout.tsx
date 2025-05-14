@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ToastProvider } from "@/components/providers/toaster-provider";
 import { Web3Provider } from "@/components/providers/web3-provider";
 import { ConfettiProvider } from "@/components/providers/confetti-provider";
+import { ThirdwebProvider } from "thirdweb/react";
 
 import "./globals.css";
 
@@ -28,23 +29,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <Web3Provider>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <ConfettiProvider />
-            <ToastProvider />
-            {children}
-          </ThemeProvider>
-        </body>
-      </html>
-    </Web3Provider>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <Web3Provider>
+          <ThirdwebProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <ConfettiProvider />
+              <ToastProvider />
+              {children}
+            </ThemeProvider>
+          </ThirdwebProvider>
+        </Web3Provider>
+      </body>
+    </html>
   );
 }

@@ -1,9 +1,13 @@
 import { redirect } from "next/navigation";
-import { getClient } from "@/lib/graphql-client";
 import { GET_COURSE_FIRST_PUBLISHED_CHAPTER } from "@/graphql/queries/get-course-first-published-chapter";
+import { getClient } from "@/lib/graphql-client";
+import { getWalletAddress } from "@/lib/get-wallet-server";
 import { GetCourseFirstPublishedChapterResponse } from "@/types";
 
-const CoursePage = async ({ params }: { params: { courseId: string } }) => {
+const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
+  const wallet = await getWalletAddress();
+  if (!wallet) return redirect("/");
+
   const client = getClient();
 
   const { course } =
@@ -14,15 +18,19 @@ const CoursePage = async ({ params }: { params: { courseId: string } }) => {
       }
     );
 
-  if (!course || !course.chapters) return redirect("/");
+  if (!course) return redirect("/");
 
-  const firstPublishedChapter = course.chapters
-    .filter(ch => ch.isPublished)
-    .sort((a, b) => a.position - b.position)[0];
+  const firstPublishedChapter = course.chapters.find(
+    (
+      chapter
+    ): chapter is { id: string; isPublished: boolean; position: number } =>
+      chapter.isPublished
+  );
 
   if (!firstPublishedChapter) return redirect("/");
-
-  return redirect(`/courses/${course.id}/chapters/${firstPublishedChapter.id}`);
+  return redirect(
+    `/courses/${params.courseId}/chapters/${firstPublishedChapter?.id}`
+  );
 };
 
-export default CoursePage;
+export default CourseIdPage;
