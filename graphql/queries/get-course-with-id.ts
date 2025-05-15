@@ -13,11 +13,13 @@ export const GET_COURSE_WITH_ID = gql`
       categoryId
       createdAt
       updatedAt
+
       attachments {
         id
         url
         name
       }
+
       chapters {
         id
         title
@@ -29,6 +31,14 @@ export const GET_COURSE_WITH_ID = gql`
         muxData {
           playbackId
         }
+      }
+
+      enrollments {
+        id
+        wallet
+        txHash
+        enrolledVia
+        createdAt
       }
     }
   }

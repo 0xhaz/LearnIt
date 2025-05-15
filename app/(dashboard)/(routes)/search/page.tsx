@@ -16,7 +16,7 @@ interface SearchPageProps {
 }
 
 const SearchPage = async ({ searchParams }: SearchPageProps) => {
-  const wallet = await getWalletAddress();
+  const wallet = (await getWalletAddress())?.toLowerCase();
   if (!wallet) return redirect("/");
 
   const client = getClient();

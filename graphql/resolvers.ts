@@ -236,6 +236,14 @@ export const resolvers = {
         },
       });
     },
+
+    enrollments: async (parent: any, _args: { id: string }, ctx: Context) => {
+      return ctx.prisma.enrollment.findMany({
+        where: {
+          courseId: parent.id,
+        },
+      });
+    },
   },
 
   Chapter: {

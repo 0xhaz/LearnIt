@@ -15,7 +15,7 @@ const ChapterIdPage = async ({
 }: {
   params: { courseId: string; chapterId: string };
 }) => {
-  const wallet = await getWalletAddress();
+  const wallet = (await getWalletAddress())?.toLowerCase();
   if (!wallet) return redirect("/");
 
   const {

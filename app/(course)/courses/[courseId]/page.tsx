@@ -5,7 +5,7 @@ import { getWalletAddress } from "@/lib/get-wallet-server";
 import { GetCourseFirstPublishedChapterResponse } from "@/types";
 
 const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
-  const wallet = await getWalletAddress();
+  const wallet = (await getWalletAddress())?.toLowerCase();
   if (!wallet) return redirect("/");
 
   const client = getClient();

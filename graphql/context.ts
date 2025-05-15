@@ -4,7 +4,17 @@ const prisma = new PrismaClient();
 
 export type Context = {
   prisma: PrismaClient;
+  wallet?: string;
 };
 
-export const createContext = (): Promise<Context> =>
-  Promise.resolve({ prisma });
+export const createContext = async (req: Request): Promise<Context> => {
+  const authHeader = req.headers.get("authorization") || "";
+  const token = authHeader.replace("Bearer ", "").trim();
+
+  console.log("authHeader:", req.headers.get("authorization"));
+
+  return {
+    prisma,
+    wallet: token || undefined,
+  };
+};

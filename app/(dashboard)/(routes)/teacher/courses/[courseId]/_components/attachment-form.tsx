@@ -46,7 +46,7 @@ export const AttachmentForm = ({
         courseId,
         attachmentId: id,
       });
-      console.log(response);
+
       toast.success("Attachment removed");
       router.refresh();
     } catch {

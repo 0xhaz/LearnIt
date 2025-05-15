@@ -44,11 +44,14 @@ export const CourseCard = ({
             </div>
           </div>
           {progress !== null ? (
-            <CourseProgress
-              variant={progress === 100 ? "success" : "default"}
-              size="sm"
-              value={progress}
-            />
+            <div className="flex flex-col gap-y-2">
+              <CourseProgress
+                variant={progress === 100 ? "success" : "default"}
+                size="sm"
+                value={progress}
+              />
+              <p className="text-xs text-muted-foreground text-right"></p>
+            </div>
           ) : (
             <p className="text-md md:text-sm font-medium text-foreground">
               {formatPrice(price)}

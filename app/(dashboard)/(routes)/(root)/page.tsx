@@ -6,13 +6,15 @@ import { InfoCard } from "./_components/info-card";
 import { CheckCircle, Clock } from "lucide-react";
 
 export default async function Dashboard() {
-  const wallet = await getWalletAddress();
+  const wallet = (await getWalletAddress())?.toLowerCase();
 
   if (!wallet) return redirect("/");
 
   const { completedCourses, coursesInProgress } = await getDashboardCourses(
     wallet
   );
+
+  const allCourses = [...completedCourses, ...coursesInProgress];
 
   return (
     <div className="p-6 space-y-4">
@@ -29,7 +31,7 @@ export default async function Dashboard() {
           variant="success"
         />
       </div>
-      <CoursesList items={[...completedCourses, ...coursesInProgress]} />
+      <CoursesList items={allCourses} />
     </div>
   );
 }

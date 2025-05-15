@@ -7,7 +7,7 @@ import { columns } from "./_components/columns";
 import { GetCoursesByWalletResponse } from "@/types";
 
 const CoursesPage = async () => {
-  const wallet = await getWalletAddress();
+  const wallet = (await getWalletAddress())?.toLowerCase();
 
   if (!wallet) return redirect("/");
 

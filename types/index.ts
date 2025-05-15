@@ -29,11 +29,13 @@ export interface GetCourseWithIdResponse {
     categoryId: string | null;
     createdAt: string;
     updatedAt: string;
+
     attachments: {
       id: string;
       url: string;
       name: string;
     }[];
+
     chapters: {
       id: string;
       title: string;
@@ -45,6 +47,15 @@ export interface GetCourseWithIdResponse {
       muxData?: {
         playbackId?: string;
       } | null;
+    }[];
+
+    enrollments: {
+      id: string;
+      userId: string;
+      wallet: string;
+      txHash: string;
+      enrolledVia: string;
+      createdAt: string;
     }[];
   };
 }
@@ -283,8 +294,8 @@ export interface Enrollment {
   courseId: string;
   enrolledVia?: string;
   txHash?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface MuxData {

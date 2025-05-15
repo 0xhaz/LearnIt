@@ -14,7 +14,7 @@ const CourseLayout = async ({
   children: React.ReactNode;
   params: { courseId: string };
 }) => {
-  const wallet = await getWalletAddress();
+  const wallet = (await getWalletAddress())?.toLowerCase();
   if (!wallet) return redirect("/");
 
   const client = getClient();

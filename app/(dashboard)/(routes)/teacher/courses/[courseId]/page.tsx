@@ -22,10 +22,15 @@ import { CategoryForm } from "./_components/category-form";
 import { ChaptersForm } from "./_components/chapters-form";
 import { PriceForm } from "./_components/price-form";
 import { AttachmentForm } from "./_components/attachment-form";
-import { GetCourseWithIdResponse, GetCategoriesResponse } from "@/types";
+import {
+  GetCourseWithIdResponse,
+  GetCategoriesResponse,
+  Course,
+  Attachment,
+} from "@/types";
 
 const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
-  const wallet = await getWalletAddress();
+  const wallet = (await getWalletAddress())?.toLowerCase();
 
   if (!wallet) {
     return redirect("/");
@@ -116,14 +121,28 @@ const CourseIdPage = async ({ params }: { params: { courseId: string } }) => {
                 <IconBadge icon={CircleDollarSign} />
                 <h2 className="text-xl">Sell your course</h2>
               </div>
-              <PriceForm initialData={course} courseId={course.id} />
+              <PriceForm
+                initialData={{
+                  price: course.price,
+                  description: course.description ?? "",
+                }}
+                courseId={course.id}
+              />
             </div>
             <div>
               <div className="flex items-center gap-x-2">
                 <IconBadge icon={File} />
                 <h2 className="text-xl">Resources & Attachments</h2>
               </div>
-              <AttachmentForm initialData={course} courseId={course.id} />
+              <AttachmentForm
+                initialData={
+                  course as Course & {
+                    attachments: Attachment[];
+                    enrollments: any[];
+                  }
+                }
+                courseId={course.id}
+              />
             </div>
           </div>
         </div>

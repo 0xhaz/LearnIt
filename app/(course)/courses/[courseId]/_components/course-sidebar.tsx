@@ -15,7 +15,7 @@ export const CourseSidebar = async ({
   courseId,
   progressCount,
 }: CourseSidebarProps) => {
-  const wallet = await getWalletAddress();
+  const wallet = (await getWalletAddress())?.toLowerCase();
   if (!wallet) return redirect("/");
 
   const client = getClient();

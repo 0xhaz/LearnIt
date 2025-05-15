@@ -5,7 +5,7 @@ import { getWalletAddress } from "@/lib/get-wallet-server";
 const f = createUploadthing();
 
 const handleAuth = async () => {
-  const wallet = await getWalletAddress();
+  const wallet = (await getWalletAddress())?.toLowerCase();
 
   if (!wallet) {
     throw new UploadThingError("Unauthorized: Wallet not found");
