@@ -121,6 +121,7 @@ extend type Query {
     chapterId: String!
   ): ChapterResponse!
   purchases(where: PurchaseFilterInput): [Purchase!]!
+  checkEnrollment(wallet: String!, courseId: String!): Enrollment
 }
 
 type ChapterResponse {
@@ -199,4 +200,19 @@ type Mutation {
   unpublishChapter(chapterId: String!): Chapter
   deleteChapter(chapterId: String!): Chapter
   updateProgress(chapterId: String!, isCompleted: Boolean!): UserProgress!
+  enrollCourse(
+    wallet: String!
+    courseId: String!
+    enrolledVia: String!
+    txHash: String!
+  ): Enrollment!
+}
+
+extend type Mutation {
+  enrollInCourse(
+    wallet: String!
+    courseId: String!
+    enrolledVia: String!
+    txHash: String!
+  ): Enrollment!
 }

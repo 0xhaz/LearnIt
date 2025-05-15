@@ -3,12 +3,7 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import {
-  useAccount,
-  useWalletClient,
-  useDisconnect,
-  useSwitchChain,
-} from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import {
   getContract,
   prepareContractCall,
@@ -16,24 +11,44 @@ import {
   prepareTransaction,
   readContract,
 } from "thirdweb";
-import { createWalletAdapter } from "thirdweb/wallets";
-import { useActiveWallet, useSetActiveWallet } from "thirdweb/react";
+import { useActiveWallet } from "thirdweb/react";
 import { getBuyWithFiatQuote } from "thirdweb/pay";
 import { sepolia } from "thirdweb/chains";
-import { viemAdapter } from "thirdweb/adapters/viem";
+import {
+  ENROLL_COURSE,
+  CHECK_ENROLLMENT,
+} from "@/graphql/mutations/enroll-course";
+import { getClient } from "@/lib/graphql-client";
+import { useSafeSyncWallet } from "@/hooks/use-safesync-wallet";
 
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import { thirdwebClient } from "@/lib/thirdweb-client";
 
-// Hypothetical API function to check enrollment status (implement this based on your backend)
-const checkEnrollmentStatus = async (userAddress: string, courseId: string) => {
-  // Replace with your actual API endpoint
-  const response = await fetch(
-    `/api/enrollment?user=${userAddress}&courseId=${courseId}`
-  );
-  const data = await response.json();
-  return data.isEnrolled; // Expecting { isEnrolled: boolean }
+const retryQuery = async (
+  client: any,
+  query: string,
+  variables: any,
+  maxRetries: number = 3,
+  delayMs: number = 1000
+) => {
+  let retries = 0;
+  while (retries < maxRetries) {
+    try {
+      const result = await client.request(query, variables);
+      if (result.checkEnrollment) {
+        return result;
+      }
+      throw new Error("Enrollment not found");
+    } catch (error) {
+      retries++;
+      if (retries === maxRetries) {
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  throw new Error("Max retries reached");
 };
 
 interface CourseEnrollButtonProps {
@@ -45,79 +60,22 @@ export const CourseEnrollButton = ({
   price,
   courseId,
 }: CourseEnrollButtonProps) => {
+  useSafeSyncWallet(); // Handles wallet sync and disconnection
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  const { address: userWallet, status: wagmiStatus } = useAccount();
+  const { address: userWallet } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const { disconnectAsync } = useDisconnect();
-  const { switchChainAsync } = useSwitchChain();
   const activeWallet = useActiveWallet();
-  const setActiveWallet = useSetActiveWallet();
 
   console.log("walletClient", walletClient);
   console.log("userWallet", userWallet);
   console.log("activeWallet", activeWallet);
-  console.log("wagmiStatus", wagmiStatus);
 
-  // Sync Wagmi wallet with Thirdweb
   useEffect(() => {
-    const syncWallet = async () => {
-      if (walletClient && userWallet && !activeWallet) {
-        try {
-          const adaptedAccount = viemAdapter.walletClient.fromViem({
-            walletClient: walletClient as any,
-          });
-
-          const thirdwebWallet = createWalletAdapter({
-            client: thirdwebClient,
-            adaptedAccount,
-            chain: sepolia,
-            onDisconnect: async () => {
-              await disconnectAsync();
-            },
-            switchChain: async chain => {
-              await switchChainAsync({ chainId: chain.id });
-            },
-          });
-
-          await setActiveWallet(thirdwebWallet);
-          console.log("Wallet synced with Thirdweb");
-
-          const account = await thirdwebWallet.getAccount();
-          console.log("Thirdweb wallet account:", account);
-          if (!account?.address) {
-            throw new Error("Thirdweb wallet does not have a valid address");
-          }
-        } catch (error) {
-          console.error("Error syncing wallet with Thirdweb:", error);
-        }
-      }
-    };
-
-    if (walletClient && userWallet && wagmiStatus === "connected") {
-      syncWallet();
-    }
-  }, [
-    walletClient,
-    userWallet,
-    wagmiStatus,
-    activeWallet,
-    setActiveWallet,
-    disconnectAsync,
-    switchChainAsync,
-  ]);
-
-  // Handle disconnection
-  useEffect(() => {
-    const disconnectIfNeeded = async () => {
-      if (activeWallet && wagmiStatus === "disconnected") {
-        await activeWallet.disconnect();
-        console.log("Disconnected Thirdweb wallet due to Wagmi disconnect");
-      }
-    };
-    disconnectIfNeeded();
-  }, [wagmiStatus, activeWallet]);
+    setMounted(true);
+  }, []);
 
   const onClick = async () => {
     if (!userWallet || !activeWallet) {
@@ -168,8 +126,6 @@ export const CourseEnrollButton = ({
         params: [userWallet, quote.toAddress],
       });
 
-      console.log("Current USDC allowance:", currentAllowance.toString());
-
       // Step 1: Approve the smart wallet to spend USDC if necessary
       if (currentAllowance < usdcAmount) {
         const approveTx = await prepareContractCall({
@@ -216,28 +172,64 @@ export const CourseEnrollButton = ({
         transaction: paymentTx,
       });
 
-      console.log(
-        "Payment transaction successful:",
-        paymentResult.transactionHash
-      );
+      // Step 3: Create the enrollment record on the backend
+      const client = getClient();
+      const enrollmentResult = await client.request(ENROLL_COURSE, {
+        wallet: userWallet,
+        courseId,
+        enrolledVia: "UniversalBridge",
+        txHash: paymentResult.transactionHash,
+      });
 
-      // Step 3: Verify enrollment status on the backend
-      const isEnrolled = await checkEnrollmentStatus(userWallet, courseId);
-      if (!isEnrolled) {
+      // Step 4: Verify enrollment status with retry
+      const checkResult = await retryQuery(client, CHECK_ENROLLMENT, {
+        wallet: userWallet,
+        courseId,
+      });
+
+      if (!checkResult.checkEnrollment) {
         throw new Error(
           "Enrollment not registered on the backend. Please contact support."
         );
       }
 
+      console.log("Enrollment verified:", checkResult.checkEnrollment);
+
+      // Optional Step 5: Notify Universal Bridge (if required)
+      // This step would involve an API call to Thirdweb to confirm the payment.
+      // Example (hypothetical):
+      // await notifyThirdwebUniversalBridge(paymentResult.transactionHash);
+
       toast.success("Enrollment successful!");
       router.refresh();
     } catch (error) {
       console.error("[UniversalBridgePaymentError]", error);
-      toast.error(error.message || "Payment failed. Please try again.");
+      let errorMessage = "Payment failed. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      if (
+        error instanceof Error &&
+        "errors" in error &&
+        Array.isArray((error as any).errors) &&
+        (error as any).errors.length > 0
+      ) {
+        // Handle GraphQL errors
+        errorMessage = (error as any).errors[0].message || errorMessage;
+      }
+      if (errorMessage.includes("already enrolled")) {
+        toast.error("You are already enrolled in this course.");
+      } else if (errorMessage.includes("not registered on the backend")) {
+        toast.error(errorMessage);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <Button

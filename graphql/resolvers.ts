@@ -194,6 +194,22 @@ export const resolvers = {
         },
       });
     },
+
+    checkEnrollment: async (
+      _: any,
+      args: { wallet: string; courseId: string },
+      ctx: Context
+    ) => {
+      const { wallet, courseId } = args;
+      return ctx.prisma.enrollment.findUnique({
+        where: {
+          wallet_courseId: {
+            wallet: wallet.toLowerCase(),
+            courseId,
+          },
+        },
+      });
+    },
   },
 
   Course: {
@@ -546,6 +562,61 @@ export const resolvers = {
     ) => {
       return ctx.prisma.chapter.delete({
         where: { id: args.chapterId },
+      });
+    },
+
+    enrollInCourse: async (
+      _: any,
+      args: {
+        wallet: string;
+        courseId: string;
+        enrolledVia: string;
+        txHash: string;
+      },
+      ctx: Context
+    ) => {
+      const { wallet, courseId, enrolledVia, txHash } = args;
+      const normalizedWallet = wallet.toLowerCase();
+
+      const course = await ctx.prisma.course.findUnique({
+        where: { id: courseId },
+      });
+      if (!course) throw new Error("Course not found");
+
+      const existingPurchase = await ctx.prisma.purchase.findUnique({
+        where: {
+          wallet_courseId: {
+            wallet: normalizedWallet,
+            courseId,
+          },
+        },
+      });
+
+      if (!existingPurchase) {
+        await ctx.prisma.purchase.create({
+          data: {
+            wallet: normalizedWallet,
+            courseId,
+          },
+        });
+      }
+
+      const existingEnrollment = await ctx.prisma.enrollment.findFirst({
+        where: {
+          wallet: normalizedWallet,
+          courseId,
+        },
+      });
+
+      if (existingEnrollment) return existingEnrollment;
+
+      return ctx.prisma.enrollment.create({
+        data: {
+          wallet: normalizedWallet,
+          courseId,
+          enrolledVia,
+          txHash,
+        },
       });
     },
   },

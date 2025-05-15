@@ -6,4 +6,5 @@ export type Context = {
   prisma: PrismaClient;
 };
 
-export const createContext = (): Context => ({ prisma });
+export const createContext = (): Promise<Context> =>
+  Promise.resolve({ prisma });
