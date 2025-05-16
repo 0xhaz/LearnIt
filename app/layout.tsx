@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider } from "@/components/providers/toaster-provider";
 import { Web3Provider } from "@/components/providers/web3-provider";
 import { ConfettiProvider } from "@/components/providers/confetti-provider";
 import { ThirdwebProvider } from "thirdweb/react";
+import { LensWrapper } from "@/components/providers/lens-provider";
 
 import "./globals.css";
 
@@ -35,16 +36,18 @@ export default function RootLayout({
       >
         <Web3Provider>
           <ThirdwebProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <ConfettiProvider />
-              <ToastProvider />
-              {children}
-            </ThemeProvider>
+            <LensWrapper>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                <ConfettiProvider />
+                <ToastProvider />
+                {children}
+              </ThemeProvider>
+            </LensWrapper>
           </ThirdwebProvider>
         </Web3Provider>
       </body>

@@ -18,6 +18,7 @@ type Course {
 extend type Course {
   chapters(orderBy: ChapterOrderByInput): [Chapter!]!
   purchases(where: PurchaseFilterInput): [Purchase!]!
+  lensPublication: [LensPublication!]!
 }
 
 type Chapter {
@@ -51,6 +52,7 @@ enum SortOrder {
 
 extend type Chapter {
   userProgress(wallet: String): [UserProgress!]!
+  lensPublication: [LensPublication!]!
 }
 
 type MuxData {
@@ -114,6 +116,12 @@ type Query {
   userProgressCount(userId: String!, chapterIds: [String!]!): Int!
 }
 
+enum LensPublicationType {
+  POST
+  COMMENT
+  MIRROR
+}
+
 extend type Query {
   getChapter(
     userId: String!
@@ -122,6 +130,12 @@ extend type Query {
   ): ChapterResponse!
   purchases(where: PurchaseFilterInput): [Purchase!]!
   checkEnrollment(wallet: String!, courseId: String!): Enrollment
+  lensPublications(
+    courseId: String
+    chapterId: String
+    createdBy: String
+    type: LensPublicationType
+  ): [LensPublication!]!
 }
 
 type ChapterResponse {
@@ -149,6 +163,7 @@ type Purchase {
 
 extend type Course {
   purchases: [Purchase!]!
+  lensPublication: [LensPublication!]!
 }
 
 input CourseInput {
@@ -171,6 +186,16 @@ input ChapterInput {
   videoUrl: String
   isFree: Boolean
   isPublished: Boolean
+}
+
+type LensPublication {
+  id: ID!
+  publicationId: String!
+  type: LensPublicationType!
+  courseId: String
+  chapterId: String
+  createdBy: String!
+  createdAt: String!
 }
 
 type Mutation {
@@ -215,4 +240,11 @@ extend type Mutation {
     enrolledVia: String!
     txHash: String!
   ): Enrollment!
+  createLensPublication(
+    publicationId: String!
+    type: String!
+    courseId: String
+    chapterId: String
+    createdBy: String!
+  ): LensPublication!
 }

@@ -5,7 +5,7 @@
 import { PropsWithChildren, useState, useEffect } from "react";
 import { ApolloProvider } from "@/components/providers/apollo-provider";
 import { Web3Provider } from "@/components/providers/web3-provider";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider } from "@/components/providers/toaster-provider";
 import { ConfettiProvider } from "@/components/providers/confetti-provider";
 import { ThirdwebProvider } from "thirdweb/react";
