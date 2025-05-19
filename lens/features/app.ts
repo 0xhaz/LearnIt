@@ -6,11 +6,11 @@ import { storageClient } from "@/lib/storage-client";
 import { WalletClient } from "viem";
 import { lensTestnet } from "viem/chains";
 import { signMessageWith } from "@lens-protocol/client/viem";
-import { client } from "@/lens/client";
+import { client } from "../../lens/client";
 import { LensAppAddresses } from "@/types";
 
 // Environment variable for Lens Testnet GraphQL endpoint
-const ENDPOINT = process.env.NEXT_PUBLIC_LENS_TESTNET_GRAPHQL_URL;
+const ENDPOINT = "https://api.testnet.lens.xyz/graphql";
 
 if (!ENDPOINT) {
   throw new Error("NEXT_PUBLIC_LENS_TESTNET_GRAPHQL_URL is not defined");

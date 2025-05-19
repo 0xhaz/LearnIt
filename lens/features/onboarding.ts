@@ -1,32 +1,99 @@
 import { client } from "../client";
-import { WalletClient } from "viem";
-import { Context, evmAddress, SessionClient } from "@lens-protocol/client";
+import { Address, Chain, WalletClient } from "viem";
+import { Context, SessionClient } from "@lens-protocol/client";
 import { fetchAccountsAvailable } from "@lens-protocol/client/actions";
 import {
   AuthOptions,
   ChallengeOptions,
   LensAppAddresses,
   LensAuthRole,
-} from "@/types";
+} from "../../types";
 import { ApolloClient, gql, HttpLink, InMemoryCache } from "@apollo/client";
-import { setContext } from "@apollo/client/link/context";
 import { signMessageWith } from "@lens-protocol/client/viem";
+import { setContext } from "@apollo/client/link/context";
+import { WalletActions } from "@lens-chain/sdk/viem";
+import { evmAddress, Role, Account } from "@lens-protocol/react";
+import { create } from "zustand";
 
-function signMessageWithWallet(walletClient: WalletClient, message: string) {
-  return async (message: string) => {
-    return await walletClient.signMessage({
-      account:
-        walletClient.account ??
-        (() => {
-          throw new Error("Wallet account is undefined");
-        })(),
-      message: message,
-    });
-  };
-}
+export type SessionState = {
+  session: SessionClient | null;
+  walletClient: WalletClient | null;
+  accountAddress: Address | null;
+};
+
+export type SessionActions = {
+  authenticate: (
+    walletAddress: Address,
+    accountAddress: Address,
+    role: Role
+  ) => Promise<void>;
+};
+
+export type SessionStore = SessionState & SessionActions;
+
+const defaultInitState: SessionState = {
+  session: null,
+  walletClient: null,
+  accountAddress: null,
+};
+
+export const useSessionStore = create<SessionStore>(set => ({
+  ...defaultInitState,
+  authenticate,
+}));
+
+const authenticateOnboardingUser = async (
+  walletAddress: Address,
+  accountAddress: Address
+) => {
+  const walletClient = useSessionStore.getState().walletClient;
+  if (!walletClient) {
+    throw new Error("Wallet client is not initialized");
+  }
+
+  const authenticated = await client.login({
+    onboardingUser: {
+      wallet: evmAddress(walletAddress),
+      app: LensAppAddresses.TESTNET,
+    },
+    signMessage: async (message: string) => {
+      return walletClient.signMessage({
+        account:
+          walletClient.account ||
+          (() => {
+            throw new Error("Wallet account is undefined");
+          })(),
+        message,
+      });
+    },
+  });
+
+  if (authenticated.isErr()) {
+    return console.error("Authentication failed:", authenticated.error.message);
+  }
+
+  console.log("Authenticated successfully:", authenticated.value);
+  const sessionClient = authenticated.value;
+
+  useSessionStore.setState(state => ({
+    ...state,
+    session: sessionClient,
+    accountAddress,
+  }));
+};
+
+const authenticateAccountOwnerUser = async (
+  walletAddress: Address,
+  accountAddress: Address
+) => {
+  const walletClient = useSessionStore.getState().walletClient;
+  if (!walletClient) {
+    throw new Error("Wallet client is not initialized");
+  }
+};
 
 export async function generateChallenge(
-  walletAddress: string,
+  walletAddress: Address,
   options: ChallengeOptions
 ) {
   try {
@@ -91,18 +158,17 @@ export async function generateChallenge(
 }
 
 export async function onboardUser(
-  walletClient: WalletClient,
+  walletAddress: Address,
   options: AuthOptions = {}
 ): Promise<SessionClient<Context>> {
   try {
+    const walletClient = useSessionStore.getState().walletClient;
     // Validate walletClient.account
-    if (!walletClient.account) {
+    if (!walletClient) {
       throw new Error(
         "Wallet account not initialized. Please connect a wallet."
       );
     }
-
-    const address = walletClient.account.address;
 
     // Determine app ID
     const appId =
@@ -118,13 +184,15 @@ export async function onboardUser(
     let loginRequest: any;
     switch (role) {
       case LensAuthRole.BUILDER:
-        loginRequest = { builder: { wallet: address } };
+        loginRequest = { builder: { walletAddress } };
         break;
       case LensAuthRole.ONBOARDING_USER:
         if (!appId) {
           throw new Error("App ID is required for Onboarding User role");
         }
-        loginRequest = { onboardingUser: { app: appId, wallet: address } };
+        loginRequest = {
+          onboardingUser: { app: appId, wallet: walletAddress },
+        };
         break;
       case LensAuthRole.ACCOUNT_OWNER:
         if (!appId || !options.accountAddress) {
@@ -136,7 +204,7 @@ export async function onboardUser(
           accountOwner: {
             app: appId,
             account: options.accountAddress,
-            owner: options.ownerAddress || address,
+            owner: options.ownerAddress || walletAddress,
           },
         };
         break;
@@ -150,7 +218,7 @@ export async function onboardUser(
           accountManager: {
             app: appId,
             account: options.accountAddress,
-            manager: address,
+            manager: walletAddress,
           },
         };
         break;
@@ -160,8 +228,20 @@ export async function onboardUser(
 
     // Authenticate
     const authenticated = await client.login({
-      ...loginRequest,
-      signMessage: signMessageWith(walletClient),
+      onboardingUser: {
+        wallet: evmAddress(walletAddress),
+        app: LensAppAddresses.TESTNET,
+      },
+      signMessage: async (message: string) => {
+        return walletClient.signMessage({
+          account:
+            walletClient.account ||
+            (() => {
+              throw new Error("Wallet account is undefined");
+            })(),
+          message,
+        });
+      },
     });
 
     if (authenticated.isErr()) {
@@ -183,3 +263,19 @@ export async function onboardUser(
     throw new Error(`Failed to onboard user: ${String(error)}`);
   }
 }
+
+export const authenticate = async (
+  walletAddress: Address,
+  accountAddress: Address,
+  role: Role
+) => {
+  if (role === Role.OnboardingUser) {
+    await authenticateOnboardingUser(walletAddress, accountAddress);
+    return;
+  } else if (role === Role.AccountOwner) {
+    await authenticateAccountOwnerUser(walletAddress, accountAddress);
+    return;
+  } else {
+    throw new Error(`Unsupported role: ${role}`);
+  }
+};

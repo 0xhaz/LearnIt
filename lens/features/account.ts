@@ -2,15 +2,15 @@ import { account, MetadataAttributeType } from "@lens-protocol/metadata";
 import { ApolloClient, InMemoryCache, gql, HttpLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { SessionClient, Context } from "@lens-protocol/react"; // Match PublicClient
-import { storageClient } from "@/lib/storage-client";
+import { storageClient } from "../../lib/storage-client";
 import { WalletClient, Account } from "viem";
 import { lensTestnet } from "viem/chains";
-import { signMessageWith } from "@lens-protocol/client/viem";
-import { client } from "@/lens/client";
-import { LensAppAddresses } from "@/types";
+
+import { client } from "../../lens/client";
+import { LensAppAddresses } from "../../types";
 
 // Environment variable for Lens Testnet GraphQL endpoint
-const ENDPOINT = process.env.NEXT_PUBLIC_LENS_TESTNET_GRAPHQL_URL;
+const ENDPOINT = "https://api.testnet.lens.xyz/graphql";
 
 if (!ENDPOINT) {
   throw new Error("NEXT_PUBLIC_LENS_TESTNET_GRAPHQL_URL is not defined");
@@ -26,8 +26,9 @@ const authLink = setContext(async (_, { headers }) => {
   // Assumes storage is window.localStorage or a custom IStorageProvider
   const token =
     typeof localStorage !== "undefined"
-      ? localStorage.getItem("lens_auth_token") // Adjust key based on SDK storage
+      ? localStorage.getItem("lens_auth_token")
       : null;
+  console.log("Token:", token);
   return {
     headers: {
       ...headers,
@@ -66,6 +67,18 @@ const createMetadata = (
   });
 };
 
+async function signMessageWith(walletClient: WalletClient) {
+  return async (message: string) => {
+    if (!walletClient.account) {
+      throw new Error("Wallet account is undefined");
+    }
+    return await walletClient.signMessage({
+      account: walletClient.account,
+      message,
+    });
+  };
+}
+
 export async function createUser(
   walletClient: WalletClient,
   name: string,
@@ -93,7 +106,7 @@ export async function createUser(
         app: LensAppAddresses.TESTNET,
         wallet: walletClient.account.address,
       },
-      signMessage: signMessageWith(walletClient),
+      signMessage: await signMessageWith(walletClient),
     });
 
     if (authenticated.isErr()) {
@@ -191,7 +204,7 @@ export async function createUser(
         owner: profileData.profile.ownedBy,
         account: profileData.profile.id,
       },
-      signMessage: signMessageWith(walletClient),
+      signMessage: await signMessageWith(walletClient),
     });
 
     if (ownerAuthenticated.isErr()) {
@@ -233,7 +246,7 @@ export async function updateUser(
         owner: walletClient.account.address,
         account: profileId,
       },
-      signMessage: signMessageWith(walletClient),
+      signMessage: await signMessageWith(walletClient),
     });
 
     if (authenticated.isErr()) {

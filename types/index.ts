@@ -1,3 +1,7 @@
+import { SessionClient } from "@lens-protocol/client";
+import { Address, WalletClient } from "viem";
+import { Role } from "@lens-protocol/react";
+
 export interface Chapter {
   id: string;
   title: string;
@@ -314,10 +318,10 @@ export interface UserProgress {
   updatedAt?: string;
 }
 
-export enum LensAppAddresses {
-  MAINNET = "0x8A5Cc31180c37078e1EbA2A23c861Acf351a97cE",
-  TESTNET = "0xC75A89145d765c396fd75CbD16380Eb184Bd2ca7",
-}
+export const LensAppAddresses = {
+  TESTNET: "0xC75A89145d765c396fd75CbD16380Eb184Bd2ca7",
+  MAINNET: "0x8A5Cc31180c37078e1EbA2A23c861Acf351a97cE",
+};
 
 export enum LensAuthRole {
   ACCOUNT_OWNER = "ACCOUNT_OWNER",

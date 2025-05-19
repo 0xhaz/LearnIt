@@ -1,14 +1,20 @@
-import { FragmentOf } from "@lens-protocol/react";
+import type { FragmentOf } from "@lens-protocol/client";
 
-import { AccountFragment, AccountMetadataFragment } from "./account";
+import { AccountFragment, AccountMetadataFragment } from "./accounts";
 import { PostMetadataFragment } from "./posts";
+import { MediaImageFragment } from "./images";
 
-declare module "@lens-protocol/react" {
-  export interface Account extends FragmentOf<typeof AccountFragment> {}
-  export interface accountMetadata
+declare module "@lens-protocol/client" {
+  export interface LocalAccount extends FragmentOf<typeof AccountFragment> {}
+  export interface LocalAccountMetadata
     extends FragmentOf<typeof AccountMetadataFragment> {}
-
-  export type PostMetadata = FragmentOf<typeof PostMetadataFragment>;
+  export interface LocalMediaImage
+    extends FragmentOf<typeof MediaImageFragment> {}
+  export type LocalPostMetadata = FragmentOf<typeof PostMetadataFragment>;
 }
 
-export const fragments = [AccountFragment, PostMetadataFragment];
+export const fragments = [
+  AccountFragment,
+  PostMetadataFragment,
+  MediaImageFragment,
+];

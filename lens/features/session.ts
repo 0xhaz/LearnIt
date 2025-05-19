@@ -8,8 +8,10 @@ import { ApolloClient, InMemoryCache, gql, HttpLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { evmAddress } from "@lens-protocol/client";
 
+import { client } from "../../lens/client";
+
 // Environment variable for Lens Testnet GraphQL endpoint
-const ENDPOINT = process.env.NEXT_PUBLIC_LENS_TESTNET_GRAPHQL_URL;
+const ENDPOINT = "https://api.testnet.lens.xyz/graphql";
 
 if (!ENDPOINT) {
   throw new Error("NEXT_PUBLIC_LENS_TESTNET_GRAPHQL_URL is not defined");
@@ -38,8 +40,6 @@ const apolloClient = new ApolloClient({
   link: authLink.concat(httpLink),
   cache: new InMemoryCache(),
 });
-
-import { client } from "@/lens/client";
 
 export async function resumeSession(): Promise<SessionClient<Context> | null> {
   try {
@@ -159,52 +159,25 @@ export async function getAuthenticatedSessions(
 }
 
 export async function getLastLoggedInAccount(
+  sessionClient: SessionClient<Context>,
   address: string
 ): Promise<any | null> {
   try {
-    if (!address) {
-      throw new Error("Wallet address is required");
+    if (!address || !sessionClient) {
+      throw new Error("Session client and address are required");
     }
 
-    try {
-      const result = await lastLoggedInAccount(client, {
-        address: evmAddress(address),
-      });
-      if (result.isErr()) {
-        throw new Error(
-          `Failed to get last logged-in account: ${result.error.message}`
-        );
-      }
-      return result.value;
-    } catch (sdkError) {
-      console.warn(
-        "SDK lastLoggedInAccount failed, falling back to GraphQL:",
-        sdkError
+    const result = await lastLoggedInAccount(sessionClient, {
+      address: evmAddress(address),
+    });
+
+    if (result.isErr()) {
+      throw new Error(
+        `Failed to get last logged-in account: ${result.error.message}`
       );
-
-      // GraphQL fallback
-      const LAST_LOGGED_IN_ACCOUNT_QUERY = gql`
-        query LastLoggedInAccount($address: String!) {
-          lastLoggedInAccount(address: $address) {
-            id
-            handle
-            ownedBy
-          }
-        }
-      `;
-
-      const { data } = await apolloClient.query({
-        query: LAST_LOGGED_IN_ACCOUNT_QUERY,
-        variables: { address },
-        fetchPolicy: "network-only",
-      });
-
-      if (!data.lastLoggedInAccount) {
-        throw new Error("No last logged-in account found");
-      }
-
-      return data.lastLoggedInAccount;
     }
+
+    return result.value;
   } catch (error) {
     console.error(
       `Error getting last logged-in account for address ${address}:`,
